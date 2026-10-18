@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Static Demo — User Panel</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <main>
+    <h1>User Panel</h1>
+    <section id="messages"></section>
+
+    <section class="card" id="panelContent">
+      <!-- Filled by JS -->
+    </section>
+
+    <footer>
+      <p><a href="/static/index.html">Back to login</a> · <a href="/static/admin.html">Admin panel</a></p>
+    </footer>
+  </main>
+
+  <script src="/static/js/app.js"></script>
+  <script>
+    (async () => {
+      const msg = document.getElementById('messages');
+      const user = window.StaticApp.getCurrentUser();
+      if (!user) {
+        msg.innerHTML = '<div class="err">You must login first. Redirecting…</div>';
+        setTimeout(() => location.href = '/static/index.html', 800);
+        return;
+      }
+      const content = document.getElementById('panelContent');
+      if (!user.approved) {
+        content.innerHTML = '<h2>Waiting for approval</h2><p>Your account is not yet approved by admin. Please wait or contact the admin.</p><p><button id="logoutBtn">Logout</button></p>';
+      } else {
+        content.innerHTML = `<h2>Welcome, ${user.username}</h2><p>This is the user panel (approved users only).</p>` +
+          (user.role === 'admin' ? '<p><a href="/static/admin.html">Go to Admin Panel</a></p>' : '') +
+          '<div style="margin-top:12px;"><button id="changePwd">Request password change</button> <button id="genCred">Generate ID/Password (request)</button></div>' +
+          '<p style="margin-top:8px;"><button id="logoutBtn">Logout</button></p>';
+      }
+
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        window.StaticApp.logout();
+        location.href = '/static/index.html';
+      });
+
+      document.getElementById('genCred')?.addEventListener('click', async () => {
+        const uname = prompt('Enter desired username (or leave blank for random):');
+        let name = uname && uname.trim() ? uname.trim() : 'user' + Math.floor(Math.random()*9000+1000);
+        const pwd = prompt('Enter a password (or leave blank to generate):') || Math.random().toString(36).slice(-8) + Math.floor(Math.random()*90+10);
+        const r = await window.StaticApp.requestAccountCreation(name, pwd);
+        alert(r.message);
+      });
+
+      document.getElementById('changePwd')?.addEventListener('click', async () => {
+        const newPwd = prompt('Enter new password:');
+        if (!newPwd) return alert('Password empty');
+        const r = await window.StaticApp.requestPasswordChange(newPwd);
+        alert(r.message);
+      });
+
+    })();
+  </script>
+</body>
+</html>

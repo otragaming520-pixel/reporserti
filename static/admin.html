@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Static Demo — Admin Panel</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <main>
+    <h1>Admin Panel</h1>
+    <section id="messages"></section>
+
+    <section class="card">
+      <h2>Approval Requests (Inbox)</h2>
+      <div id="requestsList">Loading…</div>
+    </section>
+
+    <section class="card">
+      <h2>All Users</h2>
+      <div id="allUsers">Loading…</div>
+    </section>
+
+    <section class="card">
+      <h2>Actions</h2>
+      <p>As admin you can approve/reject account creations and password-change requests, and remove users.</p>
+      <button id="logoutBtn">Logout</button>
+    </section>
+
+    <footer>
+      <p><a href="/static/index.html">Back to login</a> · <a href="/static/panel.html">User panel</a></p>
+    </footer>
+  </main>
+
+  <script src="/static/js/app.js"></script>
+  <script>
+    (async () => {
+      const msg = document.getElementById('messages');
+      const user = window.StaticApp.getCurrentUser();
+      if (!user) {
+        msg.innerHTML = '<div class="err">You must login as admin. Redirecting…</div>';
+        setTimeout(() => location.href = '/static/index.html', 800);
+        return;
+      }
+      if (user.role !== 'admin') {
+        msg.innerHTML = '<div class="err">Forbidden — admin only. Redirecting…</div>';
+        setTimeout(() => location.href = '/static/panel.html', 800);
+        return;
+      }
+
+      function render() {
+        const reqs = window.StaticApp.getApprovalRequests();
+        const all = window.StaticApp.getUsers();
+
+        const rl = document.getElementById('requestsList');
+        if (reqs.length === 0) rl.innerHTML = '<p>No pending requests.</p>';
+        else {
+          rl.innerHTML = '<ul>' + reqs.map(r => `\n<li><strong>${r.type}</strong> — ${r.username || r.targetUsername || ''} (created ${new Date(r.createdAt).toLocaleString()})<br>${r.note ? '<em>'+r.note+'</em><br>':''}<button data-action="approve" data-id="${r.id}">Approve</button> <button data-action="reject" data-id="${r.id}">Reject</button></li>`).join('') + '\n</ul>';
+        }
+
+        const au = document.getElementById('allUsers');
+        au.innerHTML = '<table><tr><th>ID</th><th>Username</th><th>Role</th><th>Approved</th><th>Actions</th></tr>' + all.map(u => `<tr><td>${u.id}</td><td>${u.username}</td><td>${u.role}</td><td>${u.approved? 'Yes':'No'}</td><td>${u.role!=='admin' ? `<button data-action="remove-user" data-id="${u.id}">Remove</button>` : ''}</td></tr>`).join('') + '</table>';
+
+        document.querySelectorAll('[data-action="approve"]').forEach(b => b.addEventListener('click', (e)=>{ const id=Number(e.target.dataset.id); window.StaticApp.approveRequest(id); render(); }));
+        document.querySelectorAll('[data-action="reject"]').forEach(b => b.addEventListener('click', (e)=>{ const id=Number(e.target.dataset.id); window.StaticApp.rejectRequest(id); render(); }));
+        document.querySelectorAll('[data-action="remove-user"]').forEach(b => b.addEventListener('click', (e)=>{ const id=Number(e.target.dataset.id); if(confirm('Remove user id '+id+'?')){ window.StaticApp.removeUser(id); render(); }}));
+      }
+
+      document.getElementById('logoutBtn').addEventListener('click', ()=>{ window.StaticApp.logout(); location.href = '/static/index.html'; });
+
+      render();
+    })();
+  </script>
+</body>
+</html>

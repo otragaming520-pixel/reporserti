@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Static Demo — Login / Register</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<main>
+  <h1>Static Demo — Login / Register</h1>
+
+  <section id="messages"></section>
+
+  <section class="card">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <label>Username<input name="username" required></label>
+      <label>Password<input type="password" name="password" required></label>
+      <div class="actions">
+        <button type="submit">Login</button>
+        <button type="button" id="toRegister">Register</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Register</h2>
+    <form id="registerForm">
+      <label>Username<input name="username" required></label>
+      <label>Password<input type="password" name="password" required></label>
+      <div class="actions">
+        <button type="submit">Register</button>
+      </div>
+    </form>
+    <p class="muted">New users require admin approval to access the panel.</p>
+    <p class="muted">You can also generate credentials from the panel or request account creation; this will create an approval request for admin.</p>
+  </section>
+
+  <footer>
+    <p><a href="/static/panel.html">Go to user panel</a> · <a href="/static/admin.html">Admin panel</a> · <a href="/static/paythan%20code.html">Paythan UI</a></p>
+  </footer>
+</main>
+
+<script src="/static/js/app.js"></script>
+<script>
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const username = form.username.value.trim();
+    const password = form.password.value;
+    const r = await window.StaticApp.login(username, password);
+    const msg = document.getElementById('messages');
+    msg.innerHTML = '';
+    if (r.success) {
+      msg.innerHTML = '<div class="ok">' + r.message + '</div>';
+      setTimeout(() => { window.location.href = '/static/panel.html'; }, 600);
+    } else {
+      msg.innerHTML = '<div class="err">' + r.message + '</div>';
+    }
+  });
+
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const username = form.username.value.trim();
+    const password = form.password.value;
+    const r = await window.StaticApp.requestAccountCreation(username, password);
+    const msg = document.getElementById('messages');
+    msg.innerHTML = '';
+    if (r.success) {
+      msg.innerHTML = '<div class="ok">' + r.message + '</div>';
+      form.reset();
+    } else {
+      msg.innerHTML = '<div class="err">' + r.message + '</div>';
+    }
+  });
+
+  document.getElementById('toRegister').addEventListener('click', () => {
+    window.scrollTo({ top: document.getElementById('registerForm').offsetTop - 10, behavior: 'smooth' });
+  });
+</script>
+</body>
+</html>
